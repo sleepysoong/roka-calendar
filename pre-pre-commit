@@ -42,9 +42,6 @@ echo "APK 빌드 중..."
 # outputs 폴더 생성 및 APK 복사
 mkdir -p outputs
 
-# 기존 APK 삭제
-rm -f outputs/calendar_v*.apk
-
 # 새 APK 복사
 APK_NAME="calendar_v${NEW_VERSION}.apk"
 cp app/build/outputs/apk/debug/app-debug.apk "outputs/$APK_NAME"
