@@ -14,11 +14,12 @@ data class ServiceProgress(
     val progressRatio: Float,
     val progressPercent: Double,
 ) {
-    val progressPercentText: String
-        get() = String.format(Locale.US, "%.5f", progressPercent)
-
     val remainingDays: Long
         get() = totalDays - elapsedDays
+
+    fun getProgressPercentText(decimalPlaces: Int): String {
+        return String.format(Locale.US, "%.${decimalPlaces}f", progressPercent)
+    }
 
     companion object {
         fun calculate(

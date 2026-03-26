@@ -2,16 +2,12 @@ package com.sleepysoong.rokacalendar.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,34 +19,31 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.sleepysoong.rokacalendar.model.ServiceProgress
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 private val BlueBackground = Color(0xFF2962FF)
-private val DarkBlueTrack = Color(0xFF1E4BD8)
-private val DarkText = Color(0xFF0F172A)
 
 @Composable
 fun RokaStickerScreen(
     enlistDate: LocalDate,
     dischargeDate: LocalDate,
-    progress: ServiceProgress?,
+    decimalPlaces: Int,
     previewBitmap: Bitmap?,
     validationMessage: String?,
     onEnlistDateClick: () -> Unit,
     onDischargeDateClick: () -> Unit,
+    onDecimalPlacesChange: (Int) -> Unit,
     onCopyClick: () -> Unit,
     onSaveClick: () -> Unit,
 ) {
@@ -72,10 +65,19 @@ fun RokaStickerScreen(
                 onDischargeDateClick = onDischargeDateClick,
             )
 
-            if (progress != null) {
-                ProgressPreviewCard(
-                    progress = progress,
-                    previewBitmap = previewBitmap,
+            DecimalPlacesSlider(
+                decimalPlaces = decimalPlaces,
+                onDecimalPlacesChange = onDecimalPlacesChange,
+            )
+
+            if (previewBitmap != null) {
+                Image(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(4f)
+                        .clip(RoundedCornerShape(16.dp)),
+                    bitmap = previewBitmap.asImageBitmap(),
+                    contentDescription = "진행률 스티커",
                 )
             } else {
                 ErrorCard(message = validationMessage ?: "날짜를 확인해 주세요.")
@@ -174,97 +176,40 @@ private fun DatePickerCard(
 }
 
 @Composable
-private fun ProgressPreviewCard(
-    progress: ServiceProgress,
-    previewBitmap: Bitmap?,
+private fun DecimalPlacesSlider(
+    decimalPlaces: Int,
+    onDecimalPlacesChange: (Int) -> Unit,
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = BlueBackground),
-        shape = RoundedCornerShape(16.dp),
-    ) {
+    Card {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "전역",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(modifier = Modifier.padding(horizontal = 6.dp))
-                    Text(
-                        text = progress.dischargeDate.toKoreanText(),
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 14.sp,
-                    )
-                }
                 Text(
-                    text = "D-${progress.remainingDays}",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 14.sp,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(DarkBlueTrack),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(progress.progressRatio.coerceIn(0f, 1f))
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White),
-                )
-                Text(
-                    text = "${progress.progressPercentText}%",
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 16.dp),
-                    color = DarkText,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
-        }
-    }
-
-    Spacer(modifier = Modifier.height(8.dp))
-
-    if (previewBitmap != null) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "이미지 미리보기",
+                    text = "소수점 자리수",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 12.dp),
                 )
-                Image(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(4f)
-                        .clip(RoundedCornerShape(8.dp)),
-                    bitmap = previewBitmap.asImageBitmap(),
-                    contentDescription = "진행률 스티커 미리보기",
+                Text(
+                    text = "$decimalPlaces 자리",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
+            Slider(
+                value = decimalPlaces.toFloat(),
+                onValueChange = { onDecimalPlacesChange(it.roundToInt()) },
+                valueRange = 0f..20f,
+                steps = 19,
+                colors = SliderDefaults.colors(
+                    thumbColor = BlueBackground,
+                    activeTrackColor = BlueBackground,
+                ),
+            )
         }
     }
 }

@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ fun RokaCalendarApp() {
 
         var enlistDateText by rememberSaveable { mutableStateOf(LocalDate.now().minusMonths(3).toString()) }
         var dischargeDateText by rememberSaveable { mutableStateOf(LocalDate.now().plusMonths(15).toString()) }
+        var decimalPlaces by rememberSaveable { mutableIntStateOf(5) }
 
         var tick by remember { mutableLongStateOf(0L) }
         LaunchedEffect(Unit) {
@@ -50,14 +52,14 @@ fun RokaCalendarApp() {
                 null
             }
         }
-        val previewBitmap: Bitmap? = remember(progress, tick) {
-            progress?.let(StickerBitmapFactory::create)
+        val previewBitmap: Bitmap? = remember(progress, tick, decimalPlaces) {
+            progress?.let { StickerBitmapFactory.create(it, decimalPlaces) }
         }
 
         RokaStickerScreen(
             enlistDate = enlistDate,
             dischargeDate = dischargeDate,
-            progress = progress,
+            decimalPlaces = decimalPlaces,
             previewBitmap = previewBitmap,
             validationMessage = validationMessage,
             onEnlistDateClick = {
@@ -76,12 +78,13 @@ fun RokaCalendarApp() {
                     dischargeDateText = selectedDate.toString()
                 }
             },
+            onDecimalPlacesChange = { decimalPlaces = it },
             onCopyClick = {
                 val bitmap = previewBitmap ?: return@RokaStickerScreen
                 coroutineScope.launch {
                     val result = StickerImageExporter.copyToClipboard(context, bitmap)
                     val message = if (result.isSuccess) {
-                        "이미지를 클립보드에 복사했습니다. 붙여넣기를 지원하는 앱에서 사용할 수 있어요."
+                        "이미지를 클립보드에 복사했습니다."
                     } else {
                         result.exceptionOrNull()?.message ?: "이미지 복사에 실패했습니다."
                     }
