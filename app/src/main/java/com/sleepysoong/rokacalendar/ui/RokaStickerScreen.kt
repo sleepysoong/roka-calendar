@@ -13,28 +13,34 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.sleepysoong.rokacalendar.model.ServiceProgress
 import java.time.LocalDate
+
+private val BlueBackground = Color(0xFF2962FF)
+private val DarkBlueTrack = Color(0xFF1E4BD8)
+private val DarkText = Color(0xFF0F172A)
 
 @Composable
 fun RokaStickerScreen(
@@ -66,12 +72,14 @@ fun RokaStickerScreen(
                 onDischargeDateClick = onDischargeDateClick,
             )
 
-            ProgressSummaryCard(
-                progress = progress,
-                validationMessage = validationMessage,
-            )
-
-            StickerPreviewCard(previewBitmap = previewBitmap)
+            if (progress != null) {
+                ProgressPreviewCard(
+                    progress = progress,
+                    previewBitmap = previewBitmap,
+                )
+            } else {
+                ErrorCard(message = validationMessage ?: "날짜를 확인해 주세요.")
+            }
 
             ActionButtons(
                 enabled = previewBitmap != null,
@@ -166,108 +174,112 @@ private fun DatePickerCard(
 }
 
 @Composable
-private fun ProgressSummaryCard(
-    progress: ServiceProgress?,
-    validationMessage: String?,
+private fun ProgressPreviewCard(
+    progress: ServiceProgress,
+    previewBitmap: Bitmap?,
 ) {
-    Card {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = BlueBackground),
+        shape = RoundedCornerShape(16.dp),
+    ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
         ) {
-            Text(
-                text = "진행률",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "전역",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(modifier = Modifier.padding(horizontal = 6.dp))
+                    Text(
+                        text = progress.dischargeDate.toKoreanText(),
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp,
+                    )
+                }
+                Text(
+                    text = "D-${progress.remainingDays}",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                )
+            }
 
-            if (progress == null) {
-                Text(
-                    text = validationMessage ?: "날짜를 확인해 주세요.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(DarkBlueTrack),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress.progressRatio.coerceIn(0f, 1f))
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White),
                 )
-            } else {
                 Text(
-                    text = "전역까지 ${progress.progressPercentText}%",
-                    style = MaterialTheme.typography.headlineSmall,
+                    text = "${progress.progressPercentText}%",
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 16.dp),
+                    color = DarkText,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    if (previewBitmap != null) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "이미지 미리보기",
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 12.dp),
                 )
-                Text(
-                    text = "${progress.elapsedDays}일 / ${progress.totalDays}일 진행",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Image(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(4f)
+                        .clip(RoundedCornerShape(8.dp)),
+                    bitmap = previewBitmap.asImageBitmap(),
+                    contentDescription = "진행률 스티커 미리보기",
                 )
-                ProgressBar(ratio = progress.progressRatio)
             }
         }
     }
 }
 
 @Composable
-private fun ProgressBar(ratio: Float) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(14.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                shape = RoundedCornerShape(999.dp),
-            ),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(ratio.coerceIn(0f, 1f))
-                .height(14.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(999.dp),
-                ),
-        )
-    }
-}
-
-@Composable
-private fun StickerPreviewCard(previewBitmap: Bitmap?) {
+private fun ErrorCard(message: String) {
     Card {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "이미지 미리보기",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
             )
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(4f)
-                        .padding(14.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (previewBitmap == null) {
-                        Text(
-                            text = "날짜를 설정하면 4:1 스티커 이미지가 생성됩니다.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                    } else {
-                        Image(
-                            modifier = Modifier.fillMaxSize(),
-                            bitmap = previewBitmap.asImageBitmap(),
-                            contentDescription = "진행률 스티커 미리보기",
-                        )
-                    }
-                }
-            }
         }
     }
 }
@@ -293,6 +305,7 @@ private fun ActionButtons(
             modifier = Modifier.weight(1f),
             enabled = enabled,
             onClick = onSaveClick,
+            colors = ButtonDefaults.buttonColors(containerColor = BlueBackground),
         ) {
             Text(text = "저장")
         }

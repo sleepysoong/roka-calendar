@@ -1,13 +1,14 @@
 package com.sleepysoong.rokacalendar.model
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 data class ServiceProgress(
     val enlistDate: LocalDate,
     val dischargeDate: LocalDate,
-    val today: LocalDate,
+    val now: LocalDateTime,
     val elapsedDays: Long,
     val totalDays: Long,
     val progressRatio: Float,
@@ -16,28 +17,38 @@ data class ServiceProgress(
     val progressPercentText: String
         get() = String.format(Locale.US, "%.5f", progressPercent)
 
+    val remainingDays: Long
+        get() = totalDays - elapsedDays
+
     companion object {
         fun calculate(
             enlistDate: LocalDate,
             dischargeDate: LocalDate,
-            today: LocalDate = LocalDate.now(),
         ): ServiceProgress? {
             if (!dischargeDate.isAfter(enlistDate)) {
                 return null
             }
 
+            val now = LocalDateTime.now()
+            val enlistDateTime = enlistDate.atStartOfDay()
+            val dischargeDateTime = dischargeDate.atStartOfDay()
+
+            val totalMillis = ChronoUnit.MILLIS.between(enlistDateTime, dischargeDateTime).coerceAtLeast(1)
+            val elapsedMillis = ChronoUnit.MILLIS.between(enlistDateTime, now).coerceIn(0, totalMillis)
+
             val totalDays = ChronoUnit.DAYS.between(enlistDate, dischargeDate).coerceAtLeast(1)
-            val elapsedDays = ChronoUnit.DAYS.between(enlistDate, today).coerceIn(0, totalDays)
-            val ratio = elapsedDays.toFloat() / totalDays.toFloat()
+            val elapsedDays = ChronoUnit.DAYS.between(enlistDate, now.toLocalDate()).coerceIn(0, totalDays)
+
+            val ratio = elapsedMillis.toDouble() / totalMillis.toDouble()
             val percent = ratio * 100.0
 
             return ServiceProgress(
                 enlistDate = enlistDate,
                 dischargeDate = dischargeDate,
-                today = today,
+                now = now,
                 elapsedDays = elapsedDays,
                 totalDays = totalDays,
-                progressRatio = ratio,
+                progressRatio = ratio.toFloat(),
                 progressPercent = percent,
             )
         }

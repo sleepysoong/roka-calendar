@@ -4,7 +4,9 @@ import android.app.DatePickerDialog
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -16,6 +18,7 @@ import com.sleepysoong.rokacalendar.model.ServiceProgress
 import com.sleepysoong.rokacalendar.share.StickerImageExporter
 import com.sleepysoong.rokacalendar.ui.theme.RokaCalendarTheme
 import java.time.LocalDate
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -27,9 +30,17 @@ fun RokaCalendarApp() {
         var enlistDateText by rememberSaveable { mutableStateOf(LocalDate.now().minusMonths(3).toString()) }
         var dischargeDateText by rememberSaveable { mutableStateOf(LocalDate.now().plusMonths(15).toString()) }
 
+        var tick by remember { mutableLongStateOf(0L) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(1000L)
+                tick++
+            }
+        }
+
         val enlistDate = remember(enlistDateText) { LocalDate.parse(enlistDateText) }
         val dischargeDate = remember(dischargeDateText) { LocalDate.parse(dischargeDateText) }
-        val progress = remember(enlistDate, dischargeDate) {
+        val progress = remember(enlistDate, dischargeDate, tick) {
             ServiceProgress.calculate(enlistDate = enlistDate, dischargeDate = dischargeDate)
         }
         val validationMessage = remember(enlistDate, dischargeDate, progress) {
@@ -39,7 +50,7 @@ fun RokaCalendarApp() {
                 null
             }
         }
-        val previewBitmap: Bitmap? = remember(progress) {
+        val previewBitmap: Bitmap? = remember(progress, tick) {
             progress?.let(StickerBitmapFactory::create)
         }
 

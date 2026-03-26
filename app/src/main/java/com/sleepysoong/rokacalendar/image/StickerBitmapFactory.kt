@@ -5,12 +5,19 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Typeface
 import com.sleepysoong.rokacalendar.model.ServiceProgress
-import kotlin.math.roundToInt
 
 object StickerBitmapFactory {
     private const val DEFAULT_WIDTH = 1600
     private const val DEFAULT_HEIGHT = 400
+
+    // 색상 상수
+    private val BACKGROUND_COLOR = Color.parseColor("#2962FF")
+    private val TRACK_COLOR = Color.parseColor("#1E4BD8")
+    private val WHITE = Color.WHITE
+    private val WHITE_ALPHA = Color.argb(180, 255, 255, 255)
+    private val DARK_BLUE = Color.parseColor("#0F172A")
 
     fun create(
         progress: ServiceProgress,
@@ -20,79 +27,75 @@ object StickerBitmapFactory {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        val outerPadding = width * 0.03f
-        val cardRect = RectF(
-            outerPadding,
-            height * 0.08f,
-            width - outerPadding,
-            height - (height * 0.08f),
-        )
-        val cardRadius = height * 0.16f
+        // 배경 (파란색)
+        canvas.drawColor(BACKGROUND_COLOR)
 
-        val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(235, 255, 255, 255)
-        }
+        val padding = width * 0.04f
+        val contentWidth = width - padding * 2
+
+        // === 상단 헤더 영역 ===
+        val headerY = height * 0.35f
+
+        // "전역" 타이틀 (왼쪽, 굵은 흰색)
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#111827")
+            color = WHITE
+            textSize = height * 0.18f
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        canvas.drawText("전역", padding, headerY, titlePaint)
+
+        // 전역 날짜 (전역 옆, 반투명 흰색)
+        val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = WHITE_ALPHA
             textSize = height * 0.13f
-            isFakeBoldText = true
         }
-        val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#374151")
-            textSize = height * 0.10f
+        val titleWidth = titlePaint.measureText("전역")
+        val dateText = "${progress.dischargeDate.year}년 ${progress.dischargeDate.monthValue.toString().padStart(2, '0')}월 ${progress.dischargeDate.dayOfMonth.toString().padStart(2, '0')}일"
+        canvas.drawText(dateText, padding + titleWidth + width * 0.02f, headerY, datePaint)
+
+        // D-Day (오른쪽 끝)
+        val dDayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = WHITE_ALPHA
+            textSize = height * 0.13f
         }
-        val captionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#6B7280")
-            textSize = height * 0.075f
+        val remainingDays = progress.totalDays - progress.elapsedDays
+        val dDayText = "D-$remainingDays"
+        val dDayWidth = dDayPaint.measureText(dDayText)
+        canvas.drawText(dDayText, width - padding - dDayWidth, headerY, dDayPaint)
+
+        // === 프로그레스 바 영역 ===
+        val barTop = height * 0.50f
+        val barBottom = height * 0.85f
+        val barHeight = barBottom - barTop
+        val barRadius = barHeight * 0.2f
+
+        // 트랙 (배경 바 - 어두운 파란색)
+        val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = TRACK_COLOR
         }
-        val barBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#E5E7EB")
+        val trackRect = RectF(padding, barTop, width - padding, barBottom)
+        canvas.drawRoundRect(trackRect, barRadius, barRadius, trackPaint)
+
+        // 인디케이터 (채워지는 부분 - 흰색)
+        val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = WHITE
         }
-        val barFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#22C55E")
-        }
-
-        canvas.drawRoundRect(cardRect, cardRadius, cardRadius, cardPaint)
-
-        val titleX = cardRect.left + width * 0.05f
-        val titleBaseline = cardRect.top + height * 0.20f
-        canvas.drawText("전역까지 ${progress.progressPercentText}%", titleX, titleBaseline, titlePaint)
-
-        val detailBaseline = titleBaseline + height * 0.14f
-        canvas.drawText(
-            "${progress.elapsedDays}일 / ${progress.totalDays}일 진행",
-            titleX,
-            detailBaseline,
-            bodyPaint,
-        )
-
-        val periodBaseline = detailBaseline + height * 0.11f
-        canvas.drawText(
-            "${progress.enlistDate.toKoreanDateText()} ~ ${progress.dischargeDate.toKoreanDateText()}",
-            titleX,
-            periodBaseline,
-            captionPaint,
-        )
-
-        val barLeft = titleX
-        val barTop = cardRect.bottom - height * 0.18f
-        val barRight = cardRect.right - width * 0.05f
-        val barBottom = barTop + height * 0.10f
-        val barRadius = (barBottom - barTop) / 2f
-        val barRect = RectF(barLeft, barTop, barRight, barBottom)
-
-        canvas.drawRoundRect(barRect, barRadius, barRadius, barBackgroundPaint)
-
-        val fillWidth = (barRect.width() * progress.progressRatio).coerceAtLeast(0f)
+        val fillWidth = contentWidth * progress.progressRatio
         if (fillWidth > 0f) {
-            val fillRect = RectF(barLeft, barTop, barLeft + fillWidth, barBottom)
-            canvas.drawRoundRect(fillRect, barRadius, barRadius, barFillPaint)
+            val fillRect = RectF(padding, barTop, padding + fillWidth, barBottom)
+            canvas.drawRoundRect(fillRect, barRadius, barRadius, fillPaint)
         }
+
+        // 진행률 텍스트 (바 내부 왼쪽)
+        val percentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = DARK_BLUE
+            textSize = barHeight * 0.55f
+            typeface = Typeface.MONOSPACE
+        }
+        val percentText = "${progress.progressPercentText}%"
+        val textY = barTop + (barHeight / 2f) + (percentPaint.textSize / 3f)
+        canvas.drawText(percentText, padding + width * 0.02f, textY, percentPaint)
 
         return bitmap
-    }
-
-    private fun java.time.LocalDate.toKoreanDateText(): String {
-        return "${year}년 ${monthValue}월 ${dayOfMonth}일"
     }
 }
