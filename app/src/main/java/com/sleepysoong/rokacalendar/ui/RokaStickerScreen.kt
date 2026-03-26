@@ -2,14 +2,22 @@ package com.sleepysoong.rokacalendar.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -23,27 +31,29 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sleepysoong.rokacalendar.model.StickerColor
 import java.time.LocalDate
 import kotlin.math.roundToInt
-
-private val BlueBackground = Color(0xFF2962FF)
 
 @Composable
 fun RokaStickerScreen(
     enlistDate: LocalDate,
     dischargeDate: LocalDate,
     decimalPlaces: Int,
+    selectedColor: StickerColor,
     previewBitmap: Bitmap?,
     validationMessage: String?,
     onEnlistDateClick: () -> Unit,
     onDischargeDateClick: () -> Unit,
     onDecimalPlacesChange: (Int) -> Unit,
+    onColorChange: (StickerColor) -> Unit,
     onCopyClick: () -> Unit,
     onSaveClick: () -> Unit,
 ) {
@@ -65,9 +75,15 @@ fun RokaStickerScreen(
                 onDischargeDateClick = onDischargeDateClick,
             )
 
+            ColorSelector(
+                selectedColor = selectedColor,
+                onColorChange = onColorChange,
+            )
+
             DecimalPlacesSlider(
                 decimalPlaces = decimalPlaces,
                 onDecimalPlacesChange = onDecimalPlacesChange,
+                accentColor = Color(selectedColor.backgroundColor),
             )
 
             if (previewBitmap != null) {
@@ -85,6 +101,7 @@ fun RokaStickerScreen(
 
             ActionButtons(
                 enabled = previewBitmap != null,
+                accentColor = Color(selectedColor.backgroundColor),
                 onCopyClick = onCopyClick,
                 onSaveClick = onSaveClick,
             )
@@ -176,9 +193,76 @@ private fun DatePickerCard(
 }
 
 @Composable
+private fun ColorSelector(
+    selectedColor: StickerColor,
+    onColorChange: (StickerColor) -> Unit,
+) {
+    Card {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "배경 색상",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(StickerColor.entries) { color ->
+                    ColorItem(
+                        color = color,
+                        isSelected = color == selectedColor,
+                        onClick = { onColorChange(color) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorItem(
+    color: StickerColor,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(Color(color.backgroundColor))
+                .then(
+                    if (isSelected) {
+                        Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                    } else {
+                        Modifier
+                    }
+                )
+                .clickable(onClick = onClick),
+        )
+        Text(
+            text = color.displayName,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+    }
+}
+
+@Composable
 private fun DecimalPlacesSlider(
     decimalPlaces: Int,
     onDecimalPlacesChange: (Int) -> Unit,
+    accentColor: Color,
 ) {
     Card {
         Column(
@@ -206,8 +290,8 @@ private fun DecimalPlacesSlider(
                 valueRange = 0f..20f,
                 steps = 19,
                 colors = SliderDefaults.colors(
-                    thumbColor = BlueBackground,
-                    activeTrackColor = BlueBackground,
+                    thumbColor = accentColor,
+                    activeTrackColor = accentColor,
                 ),
             )
         }
@@ -232,6 +316,7 @@ private fun ErrorCard(message: String) {
 @Composable
 private fun ActionButtons(
     enabled: Boolean,
+    accentColor: Color,
     onCopyClick: () -> Unit,
     onSaveClick: () -> Unit,
 ) {
@@ -250,7 +335,7 @@ private fun ActionButtons(
             modifier = Modifier.weight(1f),
             enabled = enabled,
             onClick = onSaveClick,
-            colors = ButtonDefaults.buttonColors(containerColor = BlueBackground),
+            colors = ButtonDefaults.buttonColors(containerColor = accentColor),
         ) {
             Text(text = "저장")
         }

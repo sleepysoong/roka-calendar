@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.sleepysoong.rokacalendar.image.StickerBitmapFactory
 import com.sleepysoong.rokacalendar.model.ServiceProgress
+import com.sleepysoong.rokacalendar.model.StickerColor
 import com.sleepysoong.rokacalendar.share.StickerImageExporter
 import com.sleepysoong.rokacalendar.ui.theme.RokaCalendarTheme
 import java.time.LocalDate
@@ -31,6 +32,9 @@ fun RokaCalendarApp() {
         var enlistDateText by rememberSaveable { mutableStateOf(LocalDate.now().minusMonths(3).toString()) }
         var dischargeDateText by rememberSaveable { mutableStateOf(LocalDate.now().plusMonths(15).toString()) }
         var decimalPlaces by rememberSaveable { mutableIntStateOf(5) }
+        var selectedColorOrdinal by rememberSaveable { mutableIntStateOf(StickerColor.BLUE.ordinal) }
+
+        val selectedColor = StickerColor.entries[selectedColorOrdinal]
 
         var tick by remember { mutableLongStateOf(0L) }
         LaunchedEffect(Unit) {
@@ -52,14 +56,15 @@ fun RokaCalendarApp() {
                 null
             }
         }
-        val previewBitmap: Bitmap? = remember(progress, tick, decimalPlaces) {
-            progress?.let { StickerBitmapFactory.create(it, decimalPlaces) }
+        val previewBitmap: Bitmap? = remember(progress, tick, decimalPlaces, selectedColor) {
+            progress?.let { StickerBitmapFactory.create(it, decimalPlaces, selectedColor) }
         }
 
         RokaStickerScreen(
             enlistDate = enlistDate,
             dischargeDate = dischargeDate,
             decimalPlaces = decimalPlaces,
+            selectedColor = selectedColor,
             previewBitmap = previewBitmap,
             validationMessage = validationMessage,
             onEnlistDateClick = {
@@ -79,6 +84,7 @@ fun RokaCalendarApp() {
                 }
             },
             onDecimalPlacesChange = { decimalPlaces = it },
+            onColorChange = { selectedColorOrdinal = it.ordinal },
             onCopyClick = {
                 val bitmap = previewBitmap ?: return@RokaStickerScreen
                 coroutineScope.launch {

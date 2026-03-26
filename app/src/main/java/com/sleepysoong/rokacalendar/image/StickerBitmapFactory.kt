@@ -7,27 +7,27 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import com.sleepysoong.rokacalendar.model.ServiceProgress
+import com.sleepysoong.rokacalendar.model.StickerColor
 
 object StickerBitmapFactory {
     private const val DEFAULT_WIDTH = 1600
     private const val DEFAULT_HEIGHT = 400
 
-    private val BACKGROUND_COLOR = Color.parseColor("#2962FF")
-    private val TRACK_COLOR = Color.parseColor("#1E4BD8")
     private val WHITE = Color.WHITE
     private val WHITE_ALPHA = Color.argb(180, 255, 255, 255)
-    private val DARK_BLUE = Color.parseColor("#0F172A")
+    private val DARK_TEXT = Color.parseColor("#0F172A")
 
     fun create(
         progress: ServiceProgress,
         decimalPlaces: Int = 5,
+        stickerColor: StickerColor = StickerColor.BLUE,
         width: Int = DEFAULT_WIDTH,
         height: Int = DEFAULT_HEIGHT,
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        canvas.drawColor(BACKGROUND_COLOR)
+        canvas.drawColor(stickerColor.backgroundColor)
 
         val padding = width * 0.04f
         val contentWidth = width - padding * 2
@@ -65,7 +65,7 @@ object StickerBitmapFactory {
         val barRadius = barHeight * 0.5f
 
         val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = TRACK_COLOR
+            color = stickerColor.trackColor
         }
         val trackRect = RectF(padding, barTop, width - padding, barBottom)
         canvas.drawRoundRect(trackRect, barRadius, barRadius, trackPaint)
@@ -80,7 +80,7 @@ object StickerBitmapFactory {
         }
 
         val percentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = DARK_BLUE
+            color = DARK_TEXT
             textSize = barHeight * 0.55f
             typeface = Typeface.MONOSPACE
         }
