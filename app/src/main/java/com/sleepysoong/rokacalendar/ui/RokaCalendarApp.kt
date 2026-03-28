@@ -63,6 +63,7 @@ fun RokaCalendarApp() {
         RokaStickerScreen(
             enlistDate = enlistDate,
             dischargeDate = dischargeDate,
+            progress = progress,
             decimalPlaces = decimalPlaces,
             selectedColor = selectedColor,
             previewBitmap = previewBitmap,

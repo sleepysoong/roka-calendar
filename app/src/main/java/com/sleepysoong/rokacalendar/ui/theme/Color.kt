@@ -2,9 +2,9 @@ package com.sleepysoong.rokacalendar.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val GreenPrimary = Color(0xFF22C55E)
+val GreenPrimary = Color(0xFF1E6A4B)
 val GreenOnPrimary = Color(0xFFFFFFFF)
-val Background = Color(0xFFF7F8FA)
-val Surface = Color(0xFFFFFFFF)
-val OnSurface = Color(0xFF111827)
-val OnSurfaceVariant = Color(0xFF6B7280)
+val Background = Color(0xFFF1F4F0)
+val Surface = Color(0xFFFAFBF8)
+val OnSurface = Color(0xFF18211C)
+val OnSurfaceVariant = Color(0xFF68746C)
