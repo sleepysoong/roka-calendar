@@ -1,10 +1,10 @@
 package com.sleepysoong.rokacalendar.ui
 
 import android.graphics.Bitmap
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -20,24 +21,24 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.sleepysoong.rokacalendar.model.ServiceProgress
 import com.sleepysoong.rokacalendar.model.StickerColor
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -46,6 +47,7 @@ import kotlin.math.roundToInt
 fun RokaStickerScreen(
     enlistDate: LocalDate,
     dischargeDate: LocalDate,
+    progress: ServiceProgress?,
     decimalPlaces: Int,
     selectedColor: StickerColor,
     previewBitmap: Bitmap?,
@@ -57,105 +59,189 @@ fun RokaStickerScreen(
     onCopyClick: () -> Unit,
     onSaveClick: () -> Unit,
 ) {
-    Scaffold { innerPadding ->
-        Column(
+    val accentColor by animateColorAsState(
+        targetValue = Color(selectedColor.backgroundColor),
+        label = "accentColor",
+    )
+    val secondaryAccent by animateColorAsState(
+        targetValue = Color(selectedColor.trackColor),
+        label = "secondaryAccent",
+    )
+    val backdrop = rememberLayerBackdrop()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LiquidGlassBackground(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            HeaderCard()
-
-            DateSection(
-                enlistDate = enlistDate,
-                dischargeDate = dischargeDate,
-                onEnlistDateClick = onEnlistDateClick,
-                onDischargeDateClick = onDischargeDateClick,
-            )
-
-            ColorSelector(
-                selectedColor = selectedColor,
-                onColorChange = onColorChange,
-            )
-
-            DecimalPlacesSlider(
-                decimalPlaces = decimalPlaces,
-                onDecimalPlacesChange = onDecimalPlacesChange,
-                accentColor = Color(selectedColor.backgroundColor),
-            )
-
-            if (previewBitmap != null) {
-                Image(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(4f)
-                        .clip(RoundedCornerShape(16.dp)),
-                    bitmap = previewBitmap.asImageBitmap(),
-                    contentDescription = "진행률 스티커",
-                )
-            } else {
-                ErrorCard(message = validationMessage ?: "날짜를 확인해 주세요.")
-            }
-
-            ActionButtons(
-                enabled = previewBitmap != null,
-                accentColor = Color(selectedColor.backgroundColor),
-                onCopyClick = onCopyClick,
-                onSaveClick = onSaveClick,
-            )
-        }
-    }
-}
-
-@Composable
-private fun HeaderCard() {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = "전역 스티커 만들기",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = "입대일과 전역일을 설정하면 전역까지 진행률을 4:1 이미지로 바로 만들 수 있어요.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DateSection(
-    enlistDate: LocalDate,
-    dischargeDate: LocalDate,
-    onEnlistDateClick: () -> Unit,
-    onDischargeDateClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        DatePickerCard(
-            modifier = Modifier.weight(1f),
-            label = "입대일",
-            date = enlistDate,
-            onClick = onEnlistDateClick,
+                .layerBackdrop(backdrop),
+            accentColor = accentColor,
+            secondaryAccent = secondaryAccent,
         )
-        DatePickerCard(
-            modifier = Modifier.weight(1f),
-            label = "전역일",
-            date = dischargeDate,
-            onClick = onDischargeDateClick,
+
+        Scaffold(
+            containerColor = Color.Transparent,
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                HeroPanel(
+                    backdrop = backdrop,
+                    progress = progress,
+                    decimalPlaces = decimalPlaces,
+                    accentColor = accentColor,
+                    secondaryAccent = secondaryAccent,
+                    validationMessage = validationMessage,
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    DatePickerCard(
+                        modifier = Modifier.weight(1f),
+                        backdrop = backdrop,
+                        label = "입대일",
+                        date = enlistDate,
+                        onClick = onEnlistDateClick,
+                    )
+                    DatePickerCard(
+                        modifier = Modifier.weight(1f),
+                        backdrop = backdrop,
+                        label = "전역일",
+                        date = dischargeDate,
+                        onClick = onDischargeDateClick,
+                    )
+                }
+
+                ControlsPanel(
+                    backdrop = backdrop,
+                    decimalPlaces = decimalPlaces,
+                    selectedColor = selectedColor,
+                    accentColor = accentColor,
+                    onDecimalPlacesChange = onDecimalPlacesChange,
+                    onColorChange = onColorChange,
+                )
+
+                PreviewPanel(
+                    backdrop = backdrop,
+                    previewBitmap = previewBitmap,
+                    validationMessage = validationMessage,
+                )
+
+                ActionButtons(
+                    backdrop = backdrop,
+                    enabled = previewBitmap != null,
+                    accentColor = accentColor,
+                    onCopyClick = onCopyClick,
+                    onSaveClick = onSaveClick,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroPanel(
+    backdrop: com.kyant.backdrop.Backdrop,
+    progress: ServiceProgress?,
+    decimalPlaces: Int,
+    accentColor: Color,
+    secondaryAccent: Color,
+    validationMessage: String?,
+) {
+    GlassPanel(
+        backdrop = backdrop,
+        shape = RoundedCornerShape(36.dp),
+        tintColor = accentColor.copy(alpha = 0.16f),
+    ) {
+        GlassTag(text = "ROKA Calendar")
+        Text(
+            text = "전역 스티커를 더 입체적으로",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "배경은 흐리고, 컨트롤은 떠 있게. 리퀴드 글래스 구조로 날짜 설정과 저장 동선을 다시 정리했습니다.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+        )
+
+        if (progress != null) {
+            Text(
+                text = "${progress.getProgressPercentText(decimalPlaces)}%",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "${progress.elapsedDays}일째 진행 중 · 남은 기간 ${progress.remainingDays}일",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
+            )
+            GlassProgressBar(
+                progress = progress.progressRatio,
+                accentColor = accentColor,
+                secondaryAccent = secondaryAccent,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                StatColumn(
+                    modifier = Modifier.weight(1f),
+                    label = "전체 복무",
+                    value = "${progress.totalDays}일",
+                )
+                StatColumn(
+                    modifier = Modifier.weight(1f),
+                    label = "남은 기간",
+                    value = "${progress.remainingDays}일",
+                )
+                StatColumn(
+                    modifier = Modifier.weight(1f),
+                    label = "오늘 기준",
+                    value = progress.now.toLocalDate().toKoreanText(),
+                )
+            }
+        } else {
+            Text(
+                text = validationMessage ?: "날짜를 확인해 주세요.",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatColumn(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color.White.copy(alpha = 0.18f))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -163,149 +249,190 @@ private fun DateSection(
 @Composable
 private fun DatePickerCard(
     modifier: Modifier = Modifier,
+    backdrop: com.kyant.backdrop.Backdrop,
     label: String,
     date: LocalDate,
     onClick: () -> Unit,
 ) {
-    Card(modifier = modifier) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = date.toKoreanText(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onClick,
-            ) {
-                Text(text = "날짜 선택")
-            }
-        }
+    GlassPanel(
+        backdrop = backdrop,
+        modifier = modifier,
+        tintColor = Color.White.copy(alpha = 0.14f),
+        onClick = onClick,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+        )
+        Text(
+            text = date.toKoreanText(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "탭해서 날짜 변경",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+        )
     }
 }
 
 @Composable
-private fun ColorSelector(
+private fun ControlsPanel(
+    backdrop: com.kyant.backdrop.Backdrop,
+    decimalPlaces: Int,
     selectedColor: StickerColor,
+    accentColor: Color,
+    onDecimalPlacesChange: (Int) -> Unit,
     onColorChange: (StickerColor) -> Unit,
 ) {
-    Card {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+    GlassPanel(
+        backdrop = backdrop,
+        tintColor = accentColor.copy(alpha = 0.12f),
+    ) {
+        Text(
+            text = "색상과 정밀도",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "스티커 배경 색과 퍼센트 소수점 자릿수를 동시에 조정합니다.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = "배경 색상",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(StickerColor.entries) { color ->
-                    ColorItem(
-                        color = color,
-                        isSelected = color == selectedColor,
-                        onClick = { onColorChange(color) },
-                    )
-                }
+            items(StickerColor.entries) { color ->
+                ColorItem(
+                    backdrop = backdrop,
+                    color = color,
+                    isSelected = color == selectedColor,
+                    onClick = { onColorChange(color) },
+                )
             }
         }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "소수점 자리수",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            GlassTag(text = "$decimalPlaces 자리")
+        }
+        Slider(
+            value = decimalPlaces.toFloat(),
+            onValueChange = { onDecimalPlacesChange(it.roundToInt()) },
+            valueRange = 0f..20f,
+            steps = 19,
+            colors = SliderDefaults.colors(
+                thumbColor = accentColor,
+                activeTrackColor = accentColor,
+                inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
+            ),
+        )
     }
 }
 
 @Composable
 private fun ColorItem(
+    backdrop: com.kyant.backdrop.Backdrop,
     color: StickerColor,
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    GlassPanel(
+        backdrop = backdrop,
+        modifier = Modifier.size(width = 72.dp, height = 96.dp),
+        shape = RoundedCornerShape(24.dp),
+        tintColor = Color(color.backgroundColor).copy(alpha = 0.22f),
+        paddingValues = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 12.dp),
+        onClick = onClick,
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(38.dp)
                 .clip(CircleShape)
                 .background(Color(color.backgroundColor))
-                .then(
-                    if (isSelected) {
-                        Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                .border(
+                    width = if (isSelected) 3.dp else 1.dp,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.onSurface
                     } else {
-                        Modifier
-                    }
+                        Color.White.copy(alpha = 0.55f)
+                    },
+                    shape = CircleShape,
                 )
-                .clickable(onClick = onClick),
+                .align(Alignment.CenterHorizontally),
         )
         Text(
             text = color.displayName,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
+            textAlign = TextAlign.Center,
             color = if (isSelected) {
-                MaterialTheme.colorScheme.primary
+                MaterialTheme.colorScheme.onSurface
             } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
             },
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
 @Composable
-private fun DecimalPlacesSlider(
-    decimalPlaces: Int,
-    onDecimalPlacesChange: (Int) -> Unit,
-    accentColor: Color,
+private fun PreviewPanel(
+    backdrop: com.kyant.backdrop.Backdrop,
+    previewBitmap: Bitmap?,
+    validationMessage: String?,
 ) {
-    Card {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+    GlassPanel(
+        backdrop = backdrop,
+        tintColor = Color.White.copy(alpha = 0.14f),
+    ) {
+        Text(
+            text = "스티커 프리뷰",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "출력 이미지는 4:1 비율로 유지됩니다.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
+        )
+        if (previewBitmap != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(26.dp))
+                    .background(Color.Black.copy(alpha = 0.08f))
+                    .border(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.32f),
+                        shape = RoundedCornerShape(26.dp),
+                    )
+                    .padding(10.dp),
             ) {
-                Text(
-                    text = "소수점 자리수",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = "$decimalPlaces 자리",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                Image(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(4f)
+                        .clip(RoundedCornerShape(20.dp)),
+                    bitmap = previewBitmap.asImageBitmap(),
+                    contentDescription = "진행률 스티커",
                 )
             }
-            Slider(
-                value = decimalPlaces.toFloat(),
-                onValueChange = { onDecimalPlacesChange(it.roundToInt()) },
-                valueRange = 0f..20f,
-                steps = 19,
-                colors = SliderDefaults.colors(
-                    thumbColor = accentColor,
-                    activeTrackColor = accentColor,
-                ),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ErrorCard(message: String) {
-    Card {
-        Column(
-            modifier = Modifier.padding(20.dp),
-        ) {
+        } else {
             Text(
-                text = message,
+                text = validationMessage ?: "날짜를 다시 확인해 주세요.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -315,30 +442,35 @@ private fun ErrorCard(message: String) {
 
 @Composable
 private fun ActionButtons(
+    backdrop: com.kyant.backdrop.Backdrop,
     enabled: Boolean,
     accentColor: Color,
     onCopyClick: () -> Unit,
     onSaveClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        OutlinedButton(
+        GlassActionButton(
+            text = "복사",
+            backdrop = backdrop,
             modifier = Modifier.weight(1f),
             enabled = enabled,
+            tintColor = Color.White.copy(alpha = 0.18f),
             onClick = onCopyClick,
-        ) {
-            Text(text = "복사")
-        }
-        Button(
+        )
+        GlassActionButton(
+            text = "저장",
+            backdrop = backdrop,
             modifier = Modifier.weight(1f),
             enabled = enabled,
+            tintColor = accentColor.copy(alpha = 0.32f),
+            contentColor = Color.White,
             onClick = onSaveClick,
-            colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-        ) {
-            Text(text = "저장")
-        }
+        )
     }
 }
 
