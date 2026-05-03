@@ -25,12 +25,17 @@ data class ServiceProgress(
         fun calculate(
             enlistDate: LocalDate,
             dischargeDate: LocalDate,
+            targetDate: LocalDate? = null,
         ): ServiceProgress? {
             if (!dischargeDate.isAfter(enlistDate)) {
                 return null
             }
 
-            val now = LocalDateTime.now()
+            val now = if (targetDate == null || targetDate == LocalDate.now()) {
+                LocalDateTime.now()
+            } else {
+                targetDate.atTime(LocalDateTime.now().toLocalTime())
+            }
             val enlistDateTime = enlistDate.atStartOfDay()
             val dischargeDateTime = dischargeDate.atStartOfDay()
 

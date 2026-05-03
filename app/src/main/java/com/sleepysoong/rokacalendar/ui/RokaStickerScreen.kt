@@ -47,6 +47,7 @@ import kotlin.math.roundToInt
 fun RokaStickerScreen(
     enlistDate: LocalDate,
     dischargeDate: LocalDate,
+    targetDate: LocalDate,
     progress: ServiceProgress?,
     decimalPlaces: Int,
     selectedColor: StickerColor,
@@ -54,6 +55,7 @@ fun RokaStickerScreen(
     validationMessage: String?,
     onEnlistDateClick: () -> Unit,
     onDischargeDateClick: () -> Unit,
+    onTargetDateClick: () -> Unit,
     onDecimalPlacesChange: (Int) -> Unit,
     onColorChange: (StickerColor) -> Unit,
     onCopyClick: () -> Unit,
@@ -98,23 +100,36 @@ fun RokaStickerScreen(
                     validationMessage = validationMessage,
                 )
 
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        DatePickerCard(
+                            modifier = Modifier.weight(1f),
+                            backdrop = backdrop,
+                            label = "입대일",
+                            date = enlistDate,
+                            onClick = onEnlistDateClick,
+                        )
+                        DatePickerCard(
+                            modifier = Modifier.weight(1f),
+                            backdrop = backdrop,
+                            label = "전역일",
+                            date = dischargeDate,
+                            onClick = onDischargeDateClick,
+                        )
+                    }
+
                     DatePickerCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         backdrop = backdrop,
-                        label = "입대일",
-                        date = enlistDate,
-                        onClick = onEnlistDateClick,
-                    )
-                    DatePickerCard(
-                        modifier = Modifier.weight(1f),
-                        backdrop = backdrop,
-                        label = "전역일",
-                        date = dischargeDate,
-                        onClick = onDischargeDateClick,
+                        label = "기준일 (스티커에 표시될 날짜)",
+                        date = targetDate,
+                        onClick = onTargetDateClick,
                     )
                 }
 
@@ -205,7 +220,7 @@ private fun HeroPanel(
                 )
                 StatColumn(
                     modifier = Modifier.weight(1f),
-                    label = "오늘 기준",
+                    label = "기준일",
                     value = progress.now.toLocalDate().toKoreanText(),
                 )
             }

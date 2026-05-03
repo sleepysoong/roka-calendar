@@ -1,6 +1,7 @@
 package com.sleepysoong.rokacalendar.ui
 
 import android.app.DatePickerDialog
+import android.content.Context
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.compose.runtime.Composable
@@ -28,9 +29,21 @@ fun RokaCalendarApp() {
     RokaCalendarTheme {
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
+        val prefs = remember { context.getSharedPreferences("roka_prefs", Context.MODE_PRIVATE) }
 
-        var enlistDateText by rememberSaveable { mutableStateOf(LocalDate.now().minusMonths(3).toString()) }
-        var dischargeDateText by rememberSaveable { mutableStateOf(LocalDate.now().plusMonths(15).toString()) }
+        var enlistDateText by rememberSaveable {
+            mutableStateOf(
+                prefs.getString("enlist_date", null) ?: LocalDate.now().minusMonths(3).toString()
+            )
+        }
+        var dischargeDateText by rememberSaveable {
+            mutableStateOf(
+                prefs.getString("discharge_date", null) ?: LocalDate.now().plusMonths(15).toString()
+            )
+        }
+        var targetDateText by rememberSaveable {
+            mutableStateOf(LocalDate.now().toString())
+        }
         var decimalPlaces by rememberSaveable { mutableIntStateOf(5) }
         var selectedColorOrdinal by rememberSaveable { mutableIntStateOf(StickerColor.BLUE.ordinal) }
 
@@ -46,8 +59,14 @@ fun RokaCalendarApp() {
 
         val enlistDate = remember(enlistDateText) { LocalDate.parse(enlistDateText) }
         val dischargeDate = remember(dischargeDateText) { LocalDate.parse(dischargeDateText) }
-        val progress = remember(enlistDate, dischargeDate, tick) {
-            ServiceProgress.calculate(enlistDate = enlistDate, dischargeDate = dischargeDate)
+        val targetDate = remember(targetDateText) { LocalDate.parse(targetDateText) }
+
+        val progress = remember(enlistDate, dischargeDate, targetDate, tick) {
+            ServiceProgress.calculate(
+                enlistDate = enlistDate,
+                dischargeDate = dischargeDate,
+                targetDate = targetDate
+            )
         }
         val validationMessage = remember(enlistDate, dischargeDate, progress) {
             if (progress == null) {
@@ -63,6 +82,7 @@ fun RokaCalendarApp() {
         RokaStickerScreen(
             enlistDate = enlistDate,
             dischargeDate = dischargeDate,
+            targetDate = targetDate,
             progress = progress,
             decimalPlaces = decimalPlaces,
             selectedColor = selectedColor,
@@ -74,6 +94,7 @@ fun RokaCalendarApp() {
                     initialDate = enlistDate,
                 ) { selectedDate ->
                     enlistDateText = selectedDate.toString()
+                    prefs.edit().putString("enlist_date", enlistDateText).apply()
                 }
             },
             onDischargeDateClick = {
@@ -82,6 +103,15 @@ fun RokaCalendarApp() {
                     initialDate = dischargeDate,
                 ) { selectedDate ->
                     dischargeDateText = selectedDate.toString()
+                    prefs.edit().putString("discharge_date", dischargeDateText).apply()
+                }
+            },
+            onTargetDateClick = {
+                showDatePicker(
+                    context = context,
+                    initialDate = targetDate,
+                ) { selectedDate ->
+                    targetDateText = selectedDate.toString()
                 }
             },
             onDecimalPlacesChange = { decimalPlaces = it },
@@ -115,7 +145,7 @@ fun RokaCalendarApp() {
 }
 
 private fun showDatePicker(
-    context: android.content.Context,
+    context: Context,
     initialDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
 ) {
