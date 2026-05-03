@@ -54,7 +54,7 @@ fun RokaCalendarApp() {
         var tick by remember { mutableLongStateOf(0L) }
         LaunchedEffect(Unit) {
             while (true) {
-                delay(1000L)
+                delay(100L)
                 tick++
             }
         }
@@ -80,22 +80,13 @@ fun RokaCalendarApp() {
             }
         }
 
-        // Static progress for the preview to avoid recreating Bitmap every second
-        val staticProgress = remember(enlistDate, dischargeDate, targetDate) {
-            ServiceProgress.calculate(
-                enlistDate = enlistDate,
-                dischargeDate = dischargeDate,
-                targetDate = targetDate
-            )
-        }
-
         var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-        LaunchedEffect(staticProgress, decimalPlaces, selectedColor) {
-            if (staticProgress != null) {
+        LaunchedEffect(progress, decimalPlaces, selectedColor) {
+            if (progress != null) {
                 // Generate bitmap off the main thread
                 previewBitmap = withContext(Dispatchers.Default) {
-                    StickerBitmapFactory.create(staticProgress, decimalPlaces, selectedColor)
+                    StickerBitmapFactory.create(progress, decimalPlaces, selectedColor)
                 }
             } else {
                 previewBitmap = null
