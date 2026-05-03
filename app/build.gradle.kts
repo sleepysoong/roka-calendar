@@ -1,5 +1,18 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+fun getGitCommitCount(): Int {
+    return try {
+        val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
+            .redirectError(ProcessBuilder.Redirect.PIPE)
+            .start()
+        process.inputStream.bufferedReader().readText().trim().toInt()
+    } catch (e: Exception) {
+        12
+    }
+}
+
+val commitCount = getGitCommitCount()
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -14,8 +27,8 @@ android {
         applicationId = "com.sleepysoong.rokacalendar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = commitCount
+        versionName = "1.0.${commitCount - 9}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
