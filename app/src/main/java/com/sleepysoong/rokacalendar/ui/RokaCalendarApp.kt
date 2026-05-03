@@ -21,8 +21,10 @@ import com.sleepysoong.rokacalendar.model.StickerColor
 import com.sleepysoong.rokacalendar.share.StickerImageExporter
 import com.sleepysoong.rokacalendar.ui.theme.RokaCalendarTheme
 import java.time.LocalDate
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun RokaCalendarApp() {
@@ -61,6 +63,7 @@ fun RokaCalendarApp() {
         val dischargeDate = remember(dischargeDateText) { LocalDate.parse(dischargeDateText) }
         val targetDate = remember(targetDateText) { LocalDate.parse(targetDateText) }
 
+        // Live progress for the UI
         val progress = remember(enlistDate, dischargeDate, targetDate, tick) {
             ServiceProgress.calculate(
                 enlistDate = enlistDate,
@@ -68,6 +71,7 @@ fun RokaCalendarApp() {
                 targetDate = targetDate
             )
         }
+
         val validationMessage = remember(enlistDate, dischargeDate, progress) {
             if (progress == null) {
                 "전역일은 입대일보다 뒤여야 합니다."
@@ -75,8 +79,27 @@ fun RokaCalendarApp() {
                 null
             }
         }
-        val previewBitmap: Bitmap? = remember(progress, tick, decimalPlaces, selectedColor) {
-            progress?.let { StickerBitmapFactory.create(it, decimalPlaces, selectedColor) }
+
+        // Static progress for the preview to avoid recreating Bitmap every second
+        val staticProgress = remember(enlistDate, dischargeDate, targetDate) {
+            ServiceProgress.calculate(
+                enlistDate = enlistDate,
+                dischargeDate = dischargeDate,
+                targetDate = targetDate
+            )
+        }
+
+        var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+        LaunchedEffect(staticProgress, decimalPlaces, selectedColor) {
+            if (staticProgress != null) {
+                // Generate bitmap off the main thread
+                previewBitmap = withContext(Dispatchers.Default) {
+                    StickerBitmapFactory.create(staticProgress, decimalPlaces, selectedColor)
+                }
+            } else {
+                previewBitmap = null
+            }
         }
 
         RokaStickerScreen(
@@ -117,9 +140,14 @@ fun RokaCalendarApp() {
             onDecimalPlacesChange = { decimalPlaces = it },
             onColorChange = { selectedColorOrdinal = it.ordinal },
             onCopyClick = {
-                val bitmap = previewBitmap ?: return@RokaStickerScreen
                 coroutineScope.launch {
-                    val result = StickerImageExporter.copyToClipboard(context, bitmap)
+                    val currentProgress = ServiceProgress.calculate(enlistDate, dischargeDate, targetDate)
+                    if (currentProgress == null) return@launch
+                    
+                    val freshBitmap = withContext(Dispatchers.Default) {
+                        StickerBitmapFactory.create(currentProgress, decimalPlaces, selectedColor)
+                    }
+                    val result = StickerImageExporter.copyToClipboard(context, freshBitmap)
                     val message = if (result.isSuccess) {
                         "이미지를 클립보드에 복사했습니다."
                     } else {
@@ -129,9 +157,14 @@ fun RokaCalendarApp() {
                 }
             },
             onSaveClick = {
-                val bitmap = previewBitmap ?: return@RokaStickerScreen
                 coroutineScope.launch {
-                    val result = StickerImageExporter.saveToGallery(context, bitmap)
+                    val currentProgress = ServiceProgress.calculate(enlistDate, dischargeDate, targetDate)
+                    if (currentProgress == null) return@launch
+
+                    val freshBitmap = withContext(Dispatchers.Default) {
+                        StickerBitmapFactory.create(currentProgress, decimalPlaces, selectedColor)
+                    }
+                    val result = StickerImageExporter.saveToGallery(context, freshBitmap)
                     val message = if (result.isSuccess) {
                         "${result.getOrNull()} 저장 완료"
                     } else {

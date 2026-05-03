@@ -36,8 +36,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.sleepysoong.rokacalendar.model.ServiceProgress
 import com.sleepysoong.rokacalendar.model.StickerColor
 import java.time.LocalDate
@@ -65,20 +63,9 @@ fun RokaStickerScreen(
         targetValue = Color(selectedColor.backgroundColor),
         label = "accentColor",
     )
-    val secondaryAccent by animateColorAsState(
-        targetValue = Color(selectedColor.trackColor),
-        label = "secondaryAccent",
-    )
-    val backdrop = rememberLayerBackdrop()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LiquidGlassBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .layerBackdrop(backdrop),
-            accentColor = accentColor,
-            secondaryAccent = secondaryAccent,
-        )
+        AppleBackground(modifier = Modifier.fillMaxSize())
 
         Scaffold(
             containerColor = Color.Transparent,
@@ -92,11 +79,9 @@ fun RokaStickerScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 HeroPanel(
-                    backdrop = backdrop,
                     progress = progress,
                     decimalPlaces = decimalPlaces,
                     accentColor = accentColor,
-                    secondaryAccent = secondaryAccent,
                     validationMessage = validationMessage,
                 )
 
@@ -110,14 +95,12 @@ fun RokaStickerScreen(
                     ) {
                         DatePickerCard(
                             modifier = Modifier.weight(1f),
-                            backdrop = backdrop,
                             label = "입대일",
                             date = enlistDate,
                             onClick = onEnlistDateClick,
                         )
                         DatePickerCard(
                             modifier = Modifier.weight(1f),
-                            backdrop = backdrop,
                             label = "전역일",
                             date = dischargeDate,
                             onClick = onDischargeDateClick,
@@ -126,7 +109,6 @@ fun RokaStickerScreen(
 
                     DatePickerCard(
                         modifier = Modifier.fillMaxWidth(),
-                        backdrop = backdrop,
                         label = "기준일 (스티커에 표시될 날짜)",
                         date = targetDate,
                         onClick = onTargetDateClick,
@@ -134,7 +116,6 @@ fun RokaStickerScreen(
                 }
 
                 ControlsPanel(
-                    backdrop = backdrop,
                     decimalPlaces = decimalPlaces,
                     selectedColor = selectedColor,
                     accentColor = accentColor,
@@ -143,13 +124,11 @@ fun RokaStickerScreen(
                 )
 
                 PreviewPanel(
-                    backdrop = backdrop,
                     previewBitmap = previewBitmap,
                     validationMessage = validationMessage,
                 )
 
                 ActionButtons(
-                    backdrop = backdrop,
                     enabled = previewBitmap != null,
                     accentColor = accentColor,
                     onCopyClick = onCopyClick,
@@ -162,27 +141,21 @@ fun RokaStickerScreen(
 
 @Composable
 private fun HeroPanel(
-    backdrop: com.kyant.backdrop.Backdrop,
     progress: ServiceProgress?,
     decimalPlaces: Int,
     accentColor: Color,
-    secondaryAccent: Color,
     validationMessage: String?,
 ) {
-    GlassPanel(
-        backdrop = backdrop,
-        shape = RoundedCornerShape(36.dp),
-        tintColor = accentColor.copy(alpha = 0.16f),
-    ) {
-        GlassTag(text = "ROKA Calendar")
+    AppleCard {
+        AppleTag(text = "ROKA Calendar", accentColor = accentColor)
         Text(
-            text = "전역 스티커를 더 입체적으로",
+            text = "전역 스티커",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = "배경은 흐리고, 컨트롤은 떠 있게. 리퀴드 글래스 구조로 날짜 설정과 저장 동선을 다시 정리했습니다.",
+            text = "입대일과 전역일을 확인하고 스티커를 만들어보세요.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
         )
@@ -199,10 +172,9 @@ private fun HeroPanel(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
             )
-            GlassProgressBar(
+            AppleProgressBar(
                 progress = progress.progressRatio,
                 accentColor = accentColor,
-                secondaryAccent = secondaryAccent,
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -242,8 +214,8 @@ private fun StatColumn(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color.White.copy(alpha = 0.18f))
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFFF2F2F7))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -264,15 +236,12 @@ private fun StatColumn(
 @Composable
 private fun DatePickerCard(
     modifier: Modifier = Modifier,
-    backdrop: com.kyant.backdrop.Backdrop,
     label: String,
     date: LocalDate,
     onClick: () -> Unit,
 ) {
-    GlassPanel(
-        backdrop = backdrop,
+    AppleCard(
         modifier = modifier,
-        tintColor = Color.White.copy(alpha = 0.14f),
         onClick = onClick,
     ) {
         Text(
@@ -296,17 +265,13 @@ private fun DatePickerCard(
 
 @Composable
 private fun ControlsPanel(
-    backdrop: com.kyant.backdrop.Backdrop,
     decimalPlaces: Int,
     selectedColor: StickerColor,
     accentColor: Color,
     onDecimalPlacesChange: (Int) -> Unit,
     onColorChange: (StickerColor) -> Unit,
 ) {
-    GlassPanel(
-        backdrop = backdrop,
-        tintColor = accentColor.copy(alpha = 0.12f),
-    ) {
+    AppleCard {
         Text(
             text = "색상과 정밀도",
             style = MaterialTheme.typography.titleMedium,
@@ -323,7 +288,6 @@ private fun ControlsPanel(
         ) {
             items(StickerColor.entries) { color ->
                 ColorItem(
-                    backdrop = backdrop,
                     color = color,
                     isSelected = color == selectedColor,
                     onClick = { onColorChange(color) },
@@ -341,7 +305,7 @@ private fun ControlsPanel(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            GlassTag(text = "$decimalPlaces 자리")
+            AppleTag(text = "$decimalPlaces 자리", accentColor = accentColor)
         }
         Slider(
             value = decimalPlaces.toFloat(),
@@ -351,7 +315,7 @@ private fun ControlsPanel(
             colors = SliderDefaults.colors(
                 thumbColor = accentColor,
                 activeTrackColor = accentColor,
-                inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
+                inactiveTrackColor = Color(0xFFE5E5EA),
             ),
         )
     }
@@ -359,59 +323,46 @@ private fun ControlsPanel(
 
 @Composable
 private fun ColorItem(
-    backdrop: com.kyant.backdrop.Backdrop,
     color: StickerColor,
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    GlassPanel(
-        backdrop = backdrop,
-        modifier = Modifier.size(width = 72.dp, height = 96.dp),
-        shape = RoundedCornerShape(24.dp),
-        tintColor = Color(color.backgroundColor).copy(alpha = 0.22f),
-        paddingValues = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 12.dp),
-        onClick = onClick,
+    Column(
+        modifier = Modifier
+            .size(width = 72.dp, height = 96.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFFF2F2F7))
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) Color(color.backgroundColor) else Color.Transparent,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
         Box(
             modifier = Modifier
                 .size(38.dp)
                 .clip(CircleShape)
                 .background(Color(color.backgroundColor))
-                .border(
-                    width = if (isSelected) 3.dp else 1.dp,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        Color.White.copy(alpha = 0.55f)
-                    },
-                    shape = CircleShape,
-                )
-                .align(Alignment.CenterHorizontally),
         )
         Text(
             text = color.displayName,
             style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.Center,
-            color = if (isSelected) {
-                MaterialTheme.colorScheme.onSurface
-            } else {
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
-            },
-            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
 
 @Composable
 private fun PreviewPanel(
-    backdrop: com.kyant.backdrop.Backdrop,
     previewBitmap: Bitmap?,
     validationMessage: String?,
 ) {
-    GlassPanel(
-        backdrop = backdrop,
-        tintColor = Color.White.copy(alpha = 0.14f),
-    ) {
+    AppleCard {
         Text(
             text = "스티커 프리뷰",
             style = MaterialTheme.typography.titleMedium,
@@ -427,20 +378,15 @@ private fun PreviewPanel(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(Color.Black.copy(alpha = 0.08f))
-                    .border(
-                        width = 1.dp,
-                        color = Color.White.copy(alpha = 0.32f),
-                        shape = RoundedCornerShape(26.dp),
-                    )
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFF2F2F7))
                     .padding(10.dp),
             ) {
                 Image(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(4f)
-                        .clip(RoundedCornerShape(20.dp)),
+                        .clip(RoundedCornerShape(12.dp)),
                     bitmap = previewBitmap.asImageBitmap(),
                     contentDescription = "진행률 스티커",
                 )
@@ -457,7 +403,6 @@ private fun PreviewPanel(
 
 @Composable
 private fun ActionButtons(
-    backdrop: com.kyant.backdrop.Backdrop,
     enabled: Boolean,
     accentColor: Color,
     onCopyClick: () -> Unit,
@@ -469,20 +414,19 @@ private fun ActionButtons(
             .navigationBarsPadding(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        GlassActionButton(
+        AppleButton(
             text = "복사",
-            backdrop = backdrop,
             modifier = Modifier.weight(1f),
             enabled = enabled,
-            tintColor = Color.White.copy(alpha = 0.18f),
+            backgroundColor = Color(0xFFE5E5EA),
+            contentColor = Color.Black,
             onClick = onCopyClick,
         )
-        GlassActionButton(
+        AppleButton(
             text = "저장",
-            backdrop = backdrop,
             modifier = Modifier.weight(1f),
             enabled = enabled,
-            tintColor = accentColor.copy(alpha = 0.32f),
+            backgroundColor = accentColor,
             contentColor = Color.White,
             onClick = onSaveClick,
         )
