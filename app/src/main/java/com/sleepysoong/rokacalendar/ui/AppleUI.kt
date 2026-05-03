@@ -1,5 +1,6 @@
 package com.sleepysoong.rokacalendar.ui
 
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -50,13 +51,19 @@ fun AppleCard(
     val interactionSource = remember { MutableInteractionSource() }
     Column(
         modifier = modifier
+            .shadow(
+                elevation = 8.dp,
+                shape = shape,
+                spotColor = Color(0x1A000000),
+                ambientColor = Color(0x0A000000)
+            )
             .clip(shape)
             .background(backgroundColor)
             .then(
                 if (onClick != null) {
                     Modifier.clickable(
                         interactionSource = interactionSource,
-                        indication = null,
+                        indication = androidx.compose.foundation.LocalIndication.current,
                         onClick = onClick,
                     )
                 } else {
@@ -82,12 +89,18 @@ fun AppleButton(
     val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
+            .shadow(
+                elevation = if (enabled) 6.dp else 0.dp,
+                shape = shape,
+                spotColor = backgroundColor.copy(alpha = 0.4f),
+                ambientColor = backgroundColor.copy(alpha = 0.1f)
+            )
             .clip(shape)
             .background(if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f))
             .clickable(
                 enabled = enabled,
                 interactionSource = interactionSource,
-                indication = null,
+                indication = androidx.compose.foundation.LocalIndication.current,
                 onClick = onClick,
             )
             .padding(horizontal = 18.dp, vertical = 16.dp),
